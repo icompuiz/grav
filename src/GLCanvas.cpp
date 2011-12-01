@@ -1,39 +1,26 @@
-/*
+/**
  * @file GLCanvas.h
- *
  * Implementation of the GL canvas class. Also defines a timer for defining
  * when to render.
- *
  * @author Andrew Ford
- * Copyright (C) 2011 Rochester Institute of Technology
- *
- * This file is part of grav.
- *
- * grav is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * grav is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with grav.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "gravManager.h"
-#include "gravUtil.h"
 #include "GLCanvas.h"
 #include "InputHandler.h"
 #include "Timers.h"
+
+#if defined(USE_SAGE)
+#include "sail.h"
+sail *sageInf; // sail object
+int winWidth, winHeight;
+int sageInitialized = 0;
+#endif
 
 BEGIN_EVENT_TABLE(GLCanvas, wxGLCanvas)
 EVT_PAINT(GLCanvas::handlePaintEvent)
 EVT_SIZE(GLCanvas::resize)
 END_EVENT_TABLE()
-
 GLCanvas::GLCanvas( wxWindow* parent, gravManager* g, int* attributes,
                         wxSize size ) :
     wxGLCanvas( parent, wxID_ANY, attributes, wxDefaultPosition,
@@ -59,7 +46,6 @@ GLCanvas::GLCanvas( wxWindow* parent, gravManager* g, int* attributes,
 
 GLCanvas::~GLCanvas()
 {
-    delete glContext;
     stopTimer();
 }
 
@@ -84,6 +70,14 @@ void GLCanvas::draw()
 
     if ( grav != NULL )
         grav->draw();
+
+#if defined(USE_SAGE)
+    if (sageInitialized) {
+      GLubyte* rgbBuffer = (GLubyte *)sageInf->getBuffer();
+      glReadPixels(0, 0, winWidth, winHeight, GL_RGB, GL_UNSIGNED_BYTE, rgbBuffer);	
+      sageInf->swapBuffer();
+    }
+#endif
 
     SwapBuffers();
 
@@ -115,11 +109,49 @@ void GLCanvas::draw()
 
 void GLCanvas::resize( wxSizeEvent& evt )
 {
-    gravUtil::logVerbose( "GLCanvas::resize: resize callback: to %ix%i\n",
-            evt.GetSize().GetWidth(), evt.GetSize().GetHeight() );
-    OnSize( evt );
-    Refresh( false );
-    GLreshape( evt.GetSize().GetWidth(), evt.GetSize().GetHeight() );
+#if defined(USE_SAGE)
+  static int first = 1;
+  if (first) {
+    sageInf = new sail();
+    sageRect gravImageMap;
+    gravImageMap.left = 0.0;
+    gravImageMap.right = 1.0;
+    gravImageMap.bottom = 0.0;
+    gravImageMap.top = 1.0;
+	 
+    winWidth  = evt.GetSize().GetWidth();
+    winHeight = evt.GetSize().GetHeight();
+
+    sailConfig scfg;
+    scfg.init((char*)"grav.conf");
+    scfg.setAppName((char*)"grav");
+    scfg.rank = 0;
+    scfg.appID = 10;
+    scfg.resX = winWidth;
+    scfg.resY = winHeight;
+    scfg.winX = 0;
+    scfg.winY = 0;
+    scfg.winWidth = winWidth;
+    scfg.winHeight = winHeight;
+    scfg.imageMap = gravImageMap;
+    scfg.pixFmt = PIXFMT_888;
+    scfg.rowOrd = BOTTOM_TO_TOP;
+    scfg.master = true;
+    scfg.nwID = 1;
+    sageInf->init(scfg);
+
+    sageInitialized = 1;
+    first = 0;
+  }
+  else {
+    return;
+  }
+#endif
+
+  printf( "resize callback: to %ix%i\n", evt.GetSize().GetWidth(), evt.GetSize().GetHeight() );
+  OnSize( evt );
+  Refresh( false );
+  GLreshape( evt.GetSize().GetWidth(), evt.GetSize().GetHeight() );
 }
 
 void GLCanvas::GLreshape( int w, int h )
@@ -175,16 +207,6 @@ long GLCanvas::getDrawTime()
 }
 
 long GLCanvas::getNonDrawTime()
-{
-    return lastNonDrawTimeAvg;
-}
-
-long GLCanvas::getDrawTimeAvg()
-{
-    return lastDrawTimeAvg;
-}
-
-long GLCanvas::getNonDrawTimeAvg()
 {
     return lastNonDrawTimeAvg;
 }
