@@ -53,6 +53,7 @@ include_directories(
 	# stupid compatibility thing for cmake 2.6 :(
 	${PYTHON_INCLUDE_PATH}
 	include/
+	/usr/local/sage/include
 	)
 
 link_directories(
@@ -64,8 +65,13 @@ link_directories(
 	${wxWidgets_LIBRARY_DIRS}
 	${VPMEDIA_LIBRARY_DIRS}
 	${PYTHON_LIBRARY_DIRS}
+	/usr/local/sage/lib64
 	)
 
+# for ffmpeg
+add_definitions(-D__STDC_CONSTANT_MACROS)
+# for SAGE
+add_definitions(-DUSE_SAGE)
 # setup paths for install
 set(GRAV_RESOURCE_DIR \"${CMAKE_INSTALL_PREFIX}/share/grav/\")
 add_definitions(-DGRAV_RESOURCE_DIR=${GRAV_RESOURCE_DIR})
@@ -128,6 +134,7 @@ target_link_libraries(grav
 	${wxWidgets_LIBRARIES}
 	${VPMEDIA_LIBRARIES}
 	${PYTHON_LIBRARIES}
+	quanta sail
 	)
 
 install(TARGETS grav
