@@ -23,7 +23,6 @@
 cmake_minimum_required(VERSION 2.6)
 
 project(grav)
-
 set(CMAKE_MODULE_PATH
 	"${CMAKE_MODULE_PATH}"
 	"${grav_SOURCE_DIR}/CMake/"

@@ -28,7 +28,6 @@
 #include "GLCanvas.h"
 #include "InputHandler.h"
 #include "Timers.h"
-
 #if defined(USE_SAGE)
 #include "sail.h"
 sail *sageInf; // sail object
