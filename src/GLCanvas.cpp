@@ -1,11 +1,30 @@
 /**
  * @file GLCanvas.h
+ *
  * Implementation of the GL canvas class. Also defines a timer for defining
  * when to render.
+ *
  * @author Andrew Ford
+ * Copyright (C) 2011 Rochester Institute of Technology
+ *
+ * This file is part of grav.
+ *
+ * grav is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * grav is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with grav.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "gravManager.h"
+#include "gravUtil.h"
 #include "GLCanvas.h"
 #include "InputHandler.h"
 #include "Timers.h"
@@ -21,6 +40,7 @@ BEGIN_EVENT_TABLE(GLCanvas, wxGLCanvas)
 EVT_PAINT(GLCanvas::handlePaintEvent)
 EVT_SIZE(GLCanvas::resize)
 END_EVENT_TABLE()
+
 GLCanvas::GLCanvas( wxWindow* parent, gravManager* g, int* attributes,
                         wxSize size ) :
     wxGLCanvas( parent, wxID_ANY, attributes, wxDefaultPosition,
@@ -46,6 +66,7 @@ GLCanvas::GLCanvas( wxWindow* parent, gravManager* g, int* attributes,
 
 GLCanvas::~GLCanvas()
 {
+    delete glContext;
     stopTimer();
 }
 
@@ -147,11 +168,11 @@ void GLCanvas::resize( wxSizeEvent& evt )
     return;
   }
 #endif
-
-  printf( "resize callback: to %ix%i\n", evt.GetSize().GetWidth(), evt.GetSize().GetHeight() );
-  OnSize( evt );
-  Refresh( false );
-  GLreshape( evt.GetSize().GetWidth(), evt.GetSize().GetHeight() );
+    gravUtil::logVerbose( "GLCanvas::resize: resize callback: to %ix%i\n",
+            evt.GetSize().GetWidth(), evt.GetSize().GetHeight() );
+    OnSize( evt );
+    Refresh( false );
+    GLreshape( evt.GetSize().GetWidth(), evt.GetSize().GetHeight() );
 }
 
 void GLCanvas::GLreshape( int w, int h )
@@ -207,6 +228,16 @@ long GLCanvas::getDrawTime()
 }
 
 long GLCanvas::getNonDrawTime()
+{
+    return lastNonDrawTimeAvg;
+}
+
+long GLCanvas::getDrawTimeAvg()
+{
+    return lastDrawTimeAvg;
+}
+
+long GLCanvas::getNonDrawTimeAvg()
 {
     return lastNonDrawTimeAvg;
 }
